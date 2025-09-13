@@ -1,103 +1,330 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { BarChart3 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AdminProtection } from "../../components/admin-protection";
+import { AnalyticsAdminData } from "../../components/analytics-admin-data";
+import { AnalyticsCharts } from "../../components/analytics-charts";
+import { AnalyticsClientAnalysis } from "../../components/analytics-client-analysis";
+import { AnalyticsMetrics } from "../../components/analytics-metrics";
+import { AnalyticsRanking } from "../../components/analytics-ranking";
+import { AnalyticsUploadSection } from "../../components/analytics-upload-section";
+import { ResponsiveLayout } from "../../components/responsive-layout";
+import { useAnalyticsData } from "../../hooks/use-analytics-data";
+import { Card, CardContent } from "../../ui/card";
+
+export function normalizeName(name: string | undefined): string {
+  if (name == null) return "";
+  return name.toLowerCase().replace(/\s+/g, "").trim();
+}
+
+interface EngineerData {
+  engenheiro: string;
+  registros: number;
+  servicos: number;
+  pecas: number;
+  valorTotal: number;
+  valorPecas: number;
+  valorServicos: number;
+  valorOrcamentos: number;
+  projetos: number;
+  quantidade: number;
+  cliente?: string;
+}
+
+export function aggregateEngineerData(data: EngineerData[]): EngineerData[] {
+  const engineerMap = new Map<string, EngineerData>();
+  data.forEach((row: EngineerData) => {
+    const engineerName = row.engenheiro;
+    if (engineerMap.has(engineerName)) {
+      const existing = engineerMap.get(engineerName)!;
+      engineerMap.set(engineerName, {
+        ...existing,
+        registros: existing.registros + row.registros,
+        servicos: existing.servicos + row.servicos,
+        pecas: existing.pecas + row.pecas,
+        valorTotal: existing.valorTotal + row.valorTotal,
+        valorPecas: existing.valorPecas + row.valorPecas,
+        valorServicos: existing.valorServicos + row.valorServicos,
+        valorOrcamentos: existing.valorOrcamentos + row.valorOrcamentos,
+        projetos: existing.projetos + row.projetos,
+        quantidade: existing.quantidade + row.quantidade,
+        cliente: existing.cliente || row.cliente,
+      });
+    } else {
+      engineerMap.set(engineerName, row);
+    }
+  });
+  return Array.from(engineerMap.values());
+}
+
+export function AnalyticsPage() {
+  const {
+    uploadedData,
+    rawData,
+    fileName,
+    uploadHistory,
+    isLoading,
+    saveStatus,
+    loadSavedData,
+    loadUploadHistory,
+    handleFileUpload,
+    handleSaveData,
+    handleClearData,
+    generateDetailedReport,
+  } = useAnalyticsData();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Filtros levantados para cá
+  const [selectedDepartment, setSelectedDepartment] = useState("todos");
+  const [selectedEngineer, setSelectedEngineer] = useState("todos");
+  const [selectedYear, setSelectedYear] = useState("todos");
+  const [selectedMonth, setSelectedMonth] = useState("todos");
+  const [topEngineersFilter, setTopEngineersFilter] = useState("orcamento");
+
+  // Mapeamento dos departamentos e colaboradores
+
+  const departmentMap: Record<
+    string,
+    { gerente: string; colaboradores: string[] }
+  > = {
+    vendas: {
+      gerente: "Sobrinho",
+      colaboradores: ["Sobrinho", "Mamede", "Giovana", "LENILTON"],
+    },
+    servicos: {
+      gerente: "Giovanni",
+      colaboradores: [
+        "Giovanni",
+        "Paloma",
+        "Lucas",
+        "Marcelo M",
+        "Raquel",
+        "Rafael Massa",
+      ],
+    },
+    engenhariaeassistencia: {
+      gerente: "Carlinhos",
+      colaboradores: ["Carlinhos", "Claudio", "Anderson"],
+    },
+    externos: {
+      gerente: "Carvalho",
+      colaboradores: ["RONAN NONATO", "Jefferson", "Edison", "Sandro"],
+    },
+  };
+
+  // Filtragem dos dados conforme os filtros selecionados
+  let filteredData = uploadedData;
+  if (selectedDepartment !== "todos") {
+    if (
+      selectedDepartment === "vendas" ||
+      selectedDepartment === "servicos" ||
+      selectedDepartment === "engenhariaeassistencia" ||
+      selectedDepartment === "externos"
+    ) {
+      const colabs =
+        departmentMap[selectedDepartment].colaboradores.map(normalizeName);
+      filteredData = filteredData.filter(
+        (row: { engenheiro: string | undefined }) =>
+          colabs.includes(normalizeName(row.engenheiro)),
+      );
+    } else if (selectedDepartment === "outros") {
+      const allColabs = [
+        ...departmentMap.vendas.colaboradores,
+        ...departmentMap.servicos.colaboradores,
+        ...departmentMap.engenhariaeassistencia.colaboradores,
+        ...departmentMap.externos.colaboradores,
+      ].map(normalizeName);
+      filteredData = filteredData.filter(
+        (row: { engenheiro: string | undefined }) =>
+          !allColabs.includes(normalizeName(row.engenheiro)),
+      );
+    }
+  }
+  if (selectedEngineer !== "todos") {
+    filteredData = filteredData.filter(
+      (row: { engenheiro: string | undefined }) =>
+        normalizeName(row.engenheiro) === selectedEngineer,
+    );
+  }
+  if (selectedYear !== "todos") {
+    filteredData = filteredData.filter(
+      (row: { ano: { toString: () => string } }) =>
+        row.ano?.toString() === selectedYear,
+    );
+  }
+  if (selectedMonth !== "todos") {
+    filteredData = filteredData.filter(
+      (row: { mes: { toString: () => string } }) =>
+        row.mes?.toString().padStart(2, "0") === selectedMonth,
+    );
+  }
+
+  // Filtrar dados brutos também
+  let filteredRawData = rawData;
+  if (selectedDepartment !== "todos") {
+    if (
+      selectedDepartment === "vendas" ||
+      selectedDepartment === "servicos" ||
+      selectedDepartment === "engenhariaeassistencia" ||
+      selectedDepartment === "externos"
+    ) {
+      const colabs =
+        departmentMap[selectedDepartment].colaboradores.map(normalizeName);
+      filteredRawData = filteredRawData.filter(
+        (row: { responsavel: string | undefined }) =>
+          colabs.includes(normalizeName(row.responsavel)),
+      );
+    } else if (selectedDepartment === "outros") {
+      const allColabs = [
+        ...departmentMap.vendas.colaboradores,
+        ...departmentMap.servicos.colaboradores,
+        ...departmentMap.engenhariaeassistencia.colaboradores,
+        ...departmentMap.externos.colaboradores,
+      ].map(normalizeName);
+      filteredRawData = filteredRawData.filter(
+        (row: { responsavel: string | undefined }) =>
+          !allColabs.includes(normalizeName(row.responsavel)),
+      );
+    }
+  }
+  if (selectedEngineer !== "todos") {
+    filteredRawData = filteredRawData.filter(
+      (row: { responsavel: string | undefined }) =>
+        normalizeName(row.responsavel) === selectedEngineer,
+    );
+  }
+  if (selectedYear !== "todos") {
+    filteredRawData = filteredRawData.filter(
+      (row: { ano: { toString: () => string } }) =>
+        row.ano?.toString() === selectedYear,
+    );
+  }
+  if (selectedMonth !== "todos") {
+    filteredRawData = filteredRawData.filter(
+      (row: { mes: { toString: () => string } }) =>
+        row.mes?.toString().padStart(2, "0") === selectedMonth,
+    );
+  }
+
+  // Agregar dados dos engenheiros quando não há filtros específicos de mês/ano/engenheiro
+  const shouldAggregate =
+    selectedYear === "todos" &&
+    selectedMonth === "todos" &&
+    selectedEngineer === "todos";
+  const displayData = shouldAggregate
+    ? aggregateEngineerData(filteredData)
+    : filteredData;
+
+  // Carregar dados salvos ao inicializar
+  useEffect(() => {
+    loadSavedData();
+    loadUploadHistory();
+  }, [loadSavedData, loadUploadHistory]);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <ResponsiveLayout title="Análises" fullWidth={true}>
+      {/* Filters and Upload */}
+      <AnalyticsUploadSection
+        fileInputRef={fileInputRef}
+        fileName={fileName}
+        saveStatus={saveStatus}
+        uploadedData={uploadedData}
+        uploadHistory={uploadHistory}
+        isLoading={isLoading}
+        onUploadClick={handleUploadClick}
+        onFileUpload={handleFileUpload}
+        onSaveData={handleSaveData}
+        onPrint={handlePrint}
+        onGenerateReport={generateDetailedReport}
+        onClearData={handleClearData}
+        // Passar filtros e setters - usar dados originais para filtros
+        selectedDepartment={selectedDepartment}
+        setSelectedDepartment={setSelectedDepartment}
+        selectedEngineer={selectedEngineer}
+        setSelectedEngineer={setSelectedEngineer}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        topEngineersFilter={topEngineersFilter}
+        setTopEngineersFilter={setTopEngineersFilter}
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="bg-white">
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-gray-600">Carregando dados...</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Data Display */}
+      {!isLoading && uploadedData && uploadedData.length > 0 && (
+        <div className="space-y-6">
+          {/* Metrics Grid */}
+          <AnalyticsMetrics uploadedData={displayData} />
+
+          {/* Charts Grid */}
+          <AnalyticsCharts
+            uploadedData={displayData}
+            originalData={filteredData}
+          />
+
+          {/* Ranking */}
+          <AnalyticsRanking uploadedData={displayData} />
+
+          {/* Client Analysis */}
+          <AnalyticsClientAnalysis
+            uploadedData={displayData}
+            rawData={filteredRawData}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            selectedEngineer={selectedEngineer}
+          />
+
+          {/* Admin Data Table */}
+          <AnalyticsAdminData uploadedData={displayData} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && (!uploadedData || uploadedData.length === 0) && (
+        <Card className="bg-white">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <BarChart3 className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhum dado carregado
+            </h3>
+            <p className="text-gray-500 text-center mb-4">
+              Faça o upload de um arquivo Excel para começar a análise
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </ResponsiveLayout>
+  );
+}
+
+export default function Analytics() {
+  return (
+    <AdminProtection allowedRoles={["diretor", "admin"]}>
+      <AnalyticsPage />
+    </AdminProtection>
   );
 }
