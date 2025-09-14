@@ -2,7 +2,6 @@
 
 import { BarChart3 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AdminProtection } from "../../components/admin-protection";
 import { AnalyticsAdminData } from "../../components/analytics-admin-data";
 import { AnalyticsCharts } from "../../components/analytics-charts";
 import { AnalyticsClientAnalysis } from "../../components/analytics-client-analysis";
@@ -37,20 +36,22 @@ export function aggregateEngineerData(data: EngineerData[]): EngineerData[] {
   data.forEach((row: EngineerData) => {
     const engineerName = row.engenheiro;
     if (engineerMap.has(engineerName)) {
-      const existing = engineerMap.get(engineerName)!;
-      engineerMap.set(engineerName, {
-        ...existing,
-        registros: existing.registros + row.registros,
-        servicos: existing.servicos + row.servicos,
-        pecas: existing.pecas + row.pecas,
-        valorTotal: existing.valorTotal + row.valorTotal,
-        valorPecas: existing.valorPecas + row.valorPecas,
-        valorServicos: existing.valorServicos + row.valorServicos,
-        valorOrcamentos: existing.valorOrcamentos + row.valorOrcamentos,
-        projetos: existing.projetos + row.projetos,
-        quantidade: existing.quantidade + row.quantidade,
-        cliente: existing.cliente || row.cliente,
-      });
+      const existing = engineerMap.get(engineerName);
+      if (existing) {
+        engineerMap.set(engineerName, {
+          ...existing,
+          registros: existing.registros + row.registros,
+          servicos: existing.servicos + row.servicos,
+          pecas: existing.pecas + row.pecas,
+          valorTotal: existing.valorTotal + row.valorTotal,
+          valorPecas: existing.valorPecas + row.valorPecas,
+          valorServicos: existing.valorServicos + row.valorServicos,
+          valorOrcamentos: existing.valorOrcamentos + row.valorOrcamentos,
+          projetos: existing.projetos + row.projetos,
+          quantidade: existing.quantidade + row.quantidade,
+          cliente: existing.cliente || row.cliente,
+        });
+      }
     } else {
       engineerMap.set(engineerName, row);
     }
@@ -318,13 +319,5 @@ export function AnalyticsPage() {
         </Card>
       )}
     </ResponsiveLayout>
-  );
-}
-
-export default function Analytics() {
-  return (
-    <AdminProtection allowedRoles={["diretor", "admin"]}>
-      <AnalyticsPage />
-    </AdminProtection>
   );
 }

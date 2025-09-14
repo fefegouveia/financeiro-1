@@ -1,29 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
 import {
-  Upload,
   FileSpreadsheet,
-  Trash2,
+  History,
+  MoreVertical,
   Printer,
   Save,
-  MoreVertical,
-  History,
+  Trash2,
+  Upload,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AnalyticsFilters } from "./analytics-filters";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { useIsMobile } from "../hooks/use-mobile";
+import type { AnalyticsUpload } from "../lib/convex-analytics-client";
+import { Button } from "../ui/button";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { type AnalyticsUpload } from "@/lib/convex-analytics-client";
-import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import { AnalyticsFilters } from "./analytics-filters";
 
 interface AnalyticsUploadSectionProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -111,13 +107,20 @@ export function AnalyticsUploadSection({
         "Sobrinho",
         "Mamede",
         "Giovana",
-  
+
         "LENILTON",
       ],
     },
     servicos: {
       gerente: "Giovanni",
-      colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel", "Rafael Massa"],
+      colaboradores: [
+        "Giovanni",
+        "Paloma",
+        "Lucas",
+        "Marcelo M",
+        "Raquel",
+        "Rafael Massa",
+      ],
     },
     engenhariaeassistencia: {
       gerente: "Carlinhos",
@@ -141,7 +144,7 @@ export function AnalyticsUploadSection({
       const colabs =
         departmentMap[selectedDepartment].colaboradores.map(normalizeName);
       filteredDataForFilters = filteredDataForFilters.filter((row) =>
-        colabs.includes(normalizeName(row.engenheiro))
+        colabs.includes(normalizeName(row.engenheiro)),
       );
     } else if (selectedDepartment === "outros") {
       const allColabs = [
@@ -151,23 +154,23 @@ export function AnalyticsUploadSection({
         ...departmentMap.externos.colaboradores,
       ].map(normalizeName);
       filteredDataForFilters = filteredDataForFilters.filter(
-        (row) => !allColabs.includes(normalizeName(row.engenheiro))
+        (row) => !allColabs.includes(normalizeName(row.engenheiro)),
       );
     }
   }
   if (selectedEngineer !== "todos") {
     filteredDataForFilters = filteredDataForFilters.filter(
-      (row) => normalizeName(row.engenheiro) === selectedEngineer
+      (row) => normalizeName(row.engenheiro) === selectedEngineer,
     );
   }
   if (selectedYear !== "todos") {
     filteredDataForFilters = filteredDataForFilters.filter(
-      (row) => row.ano?.toString() === selectedYear
+      (row) => row.ano?.toString() === selectedYear,
     );
   }
   if (selectedMonth !== "todos") {
     filteredDataForFilters = filteredDataForFilters.filter(
-      (row) => row.mes?.toString().padStart(2, "0") === selectedMonth
+      (row) => row.mes?.toString().padStart(2, "0") === selectedMonth,
     );
   }
 
@@ -197,9 +200,7 @@ export function AnalyticsUploadSection({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
-                size="icon"
-                className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 h-10 w-10"
                 title="Mais opções"
               >
                 <MoreVertical className="h-5 w-5" />
@@ -242,17 +243,17 @@ export function AnalyticsUploadSection({
               </div>
               {uploadHistory.map((upload, index) => (
                 <div
-                  key={upload.id}
+                  key={upload._id}
                   className="p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
                 >
                   <div className="font-medium text-sm text-gray-800">
-                    {upload.file_name}
+                    {upload.fileName}
                   </div>
                   <div className="text-xs text-gray-600">
-                    {upload.uploaded_by} • {upload.total_records} registros
+                    {upload.uploadedBy} • {upload.totalRecords} registros
                   </div>
                   <div className="text-xs text-gray-500">
-                    {new Date(upload.upload_date || "").toLocaleString("pt-BR")}
+                    {new Date(upload.uploadedAt || "").toLocaleString("pt-BR")}
                   </div>
                 </div>
               ))}
@@ -278,24 +279,26 @@ export function AnalyticsUploadSection({
       {/* Mobile Filters Sheet */}
       {isMobile && (
         <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-          <SheetContent side="right" className="bg-white">
-            <SheetHeader>
-              <SheetTitle>Filtros</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4">
-              <AnalyticsFilters
-                uploadedData={filteredDataForFilters}
-                selectedDepartment={selectedDepartment}
-                setSelectedDepartment={setSelectedDepartment}
-                selectedEngineer={selectedEngineer}
-                setSelectedEngineer={setSelectedEngineer}
-                selectedYear={selectedYear}
-                setSelectedYear={setSelectedYear}
-                selectedMonth={selectedMonth}
-                setSelectedMonth={setSelectedMonth}
-                topEngineersFilter={topEngineersFilter}
-                setTopEngineersFilter={setTopEngineersFilter}
-              />
+          <SheetContent>
+            <div className="bg-white h-full">
+              <SheetHeader>
+                <SheetTitle>Filtros</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <AnalyticsFilters
+                  uploadedData={filteredDataForFilters}
+                  selectedDepartment={selectedDepartment}
+                  setSelectedDepartment={setSelectedDepartment}
+                  selectedEngineer={selectedEngineer}
+                  setSelectedEngineer={setSelectedEngineer}
+                  selectedYear={selectedYear}
+                  setSelectedYear={setSelectedYear}
+                  selectedMonth={selectedMonth}
+                  setSelectedMonth={setSelectedMonth}
+                  topEngineersFilter={topEngineersFilter}
+                  setTopEngineersFilter={setTopEngineersFilter}
+                />
+              </div>
             </div>
           </SheetContent>
         </Sheet>

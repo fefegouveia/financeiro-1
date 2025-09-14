@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
+interface EngineerData {
+  registros: number;
+}
+
 interface AnalyticsAdminDataProps {
-  uploadedData: any[];
+  uploadedData: EngineerData[];
 }
 
 export function AnalyticsAdminData({ uploadedData }: AnalyticsAdminDataProps) {

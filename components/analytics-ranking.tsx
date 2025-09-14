@@ -1,13 +1,23 @@
 import { BarChart3 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+
+interface EngineerData {
+  engenheiro: string;
+  projetos: number;
+  quantidade: number;
+  valorTotal: number;
+  valorOrcamentos: number;
+  valorPecas: number;
+  valorServicos: number;
+}
 
 interface AnalyticsRankingProps {
-  uploadedData: any[];
+  uploadedData: EngineerData[];
 }
 export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
   const [filterType, setFilterType] = useState<"orcamento" | "faturamento">(
-    "orcamento"
+    "orcamento",
   );
 
   const formatCurrency = (value: number) => {
@@ -49,6 +59,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
           <div className="flex items-center space-x-2">
             <div className="relative bg-gray-200 rounded-lg p-1 flex">
               <button
+                type="button"
                 onClick={() => setFilterType("orcamento")}
                 className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   filterType === "orcamento"
@@ -59,6 +70,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                 Orçamento
               </button>
               <button
+                type="button"
                 onClick={() => setFilterType("faturamento")}
                 className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   filterType === "faturamento"
@@ -83,7 +95,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                     ? uploadedData.reduce((sum, eng) => sum + eng.projetos, 0)
                     : uploadedData.reduce(
                         (sum, eng) => sum + eng.quantidade,
-                        0
+                        0,
                       )}
                 </div>
                 <div className="text-sm text-gray-600">
@@ -99,14 +111,14 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                     ? formatCurrency(
                         uploadedData.reduce(
                           (sum, eng) => sum + eng.valorOrcamentos,
-                          0
-                        )
+                          0,
+                        ),
                       )
                     : formatCurrency(
                         uploadedData.reduce(
                           (sum, eng) => sum + eng.valorTotal,
-                          0
-                        )
+                          0,
+                        ),
                       )}
                 </div>
                 <div className="text-sm text-gray-600">
@@ -130,7 +142,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
               {allEngineers.map((engineer, index) => (
                 <div
-                  key={index}
+                  key={engineer.engenheiro}
                   className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -179,7 +191,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                           <span className="font-medium text-sm text-blue-600">
                             {engineer.projetos > 0
                               ? formatCurrency(
-                                  engineer.valorOrcamentos / engineer.projetos
+                                  engineer.valorOrcamentos / engineer.projetos,
                                 )
                               : "R$ 0"}
                           </span>
@@ -228,6 +240,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
+                                <title>Informação sobre ticket médio</title>
                                 <path
                                   fillRule="evenodd"
                                   d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -243,7 +256,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                           <span className="font-medium text-xs text-blue-600">
                             {engineer.quantidade > 0
                               ? formatCurrency(
-                                  engineer.valorTotal / engineer.quantidade
+                                  engineer.valorTotal / engineer.quantidade,
                                 )
                               : "R$ 0"}
                           </span>
@@ -264,7 +277,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                             engineer.projetos > 0
                               ? Math.round(
                                   (engineer.quantidade / engineer.projetos) *
-                                    100
+                                    100,
                                 )
                               : 0
                           }%`}
@@ -279,7 +292,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                                 ? Math.min(
                                     (engineer.quantidade / engineer.projetos) *
                                       100,
-                                    100
+                                    100,
                                   )
                                 : 0
                             }%`,

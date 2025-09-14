@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import {
   type AnalyticsUpload,
   type RawDataRow,
@@ -11,6 +12,7 @@ import {
   useSaveAnalyticsRawDataBatch,
   useUploadHistory,
 } from "../lib/convex-analytics-client";
+import { mapEngineerResponsible } from "../lib/engineer-mapping";
 
 interface DataRow {
   engenheiro: string;
@@ -717,7 +719,7 @@ export function useAnalyticsData() {
       const needsBatchProcessing =
         rawData.length > BATCH_SIZE || analyticsData.length > BATCH_SIZE;
 
-      let result;
+      let result: any;
 
       console.log(
         `Processing ${rawData.length} raw data items and ${analyticsData.length} analytics items`,

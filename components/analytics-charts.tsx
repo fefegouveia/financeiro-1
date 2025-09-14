@@ -1,11 +1,25 @@
 import { BarChart3 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { AnalyticsMonthlyChart } from "./analytics-monthly-chart";
-import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
+
+interface EngineerData {
+  engenheiro: string;
+  valorTotal: number;
+  valorOrcamentos: number;
+  quantidade: number;
+  projetos: number;
+}
 
 interface AnalyticsChartsProps {
-  uploadedData: any[];
-  originalData?: any[]; // Dados originais para o gráfico mensal
+  uploadedData: EngineerData[];
+  originalData?: EngineerData[]; // Dados originais para o gráfico mensal
 }
 
 export function AnalyticsCharts({
@@ -20,7 +34,7 @@ export function AnalyticsCharts({
   };
 
   // Function to sort engineers alphabetically with special characters/numbers at the end
-  const sortEngineers = (data: any[]) => {
+  const sortEngineers = (data: EngineerData[]) => {
     return data.sort((a, b) => {
       const nameA = a.engenheiro || "";
       const nameB = b.engenheiro || "";
@@ -43,8 +57,8 @@ export function AnalyticsCharts({
   const filteredData = sortEngineers(
     [...uploadedData].filter(
       (engineer) =>
-        (engineer.valorTotal || 0) + (engineer.valorOrcamentos || 0) > 0
-    )
+        (engineer.valorTotal || 0) + (engineer.valorOrcamentos || 0) > 0,
+    ),
   );
 
   // New controls for performance chart
@@ -52,20 +66,20 @@ export function AnalyticsCharts({
     "faturamento" | "orcamento"
   >("faturamento");
   const [perfView, setPerfView] = React.useState<"valor" | "quantidade">(
-    "valor"
+    "valor",
   );
 
   // Virtualization state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
-  
+
   // Chart item dimensions
   const ITEM_WIDTH = 60; // Base width for mobile (includes spacing)
   const ITEM_WIDTH_DESKTOP = 80; // Width for desktop
   const BUFFER_SIZE = 5; // Number of items to render outside visible area
 
-  const getEngineerValue = (engineer: any) => {
+  const getEngineerValue = (engineer: EngineerData) => {
     if (perfMetric === "faturamento") {
       return perfView === "valor"
         ? engineer.valorTotal || 0
@@ -86,54 +100,62 @@ export function AnalyticsCharts({
     perfView === "valor" ? formatCurrency(value) : String(value);
 
   // Memoized chart bar component for better performance
-  const ChartBar = React.memo(({ 
-    engineer, 
-    value, 
-    height, 
-    actualIndex, 
-    currentItemWidth, 
-    isDesktop 
-  }: { 
-    engineer: any; 
-    value: number; 
-    height: number; 
-    actualIndex: number; 
-    currentItemWidth: number; 
-    isDesktop: boolean; 
-  }) => (
-    <div
-      key={actualIndex}
-      className="flex flex-col items-center space-y-2 flex-shrink-0"
-      style={{ width: `${currentItemWidth - (isDesktop ? 16 : 8)}px` }}
-    >
-      <div className="text-xs text-gray-600 font-medium text-center w-12 md:w-16">
-        {formatValue(value)}
-      </div>
+  const ChartBar = React.memo(
+    ({
+      engineer,
+      value,
+      height,
+      actualIndex,
+      currentItemWidth,
+      isDesktop,
+    }: {
+      engineer: any;
+      value: number;
+      height: number;
+      actualIndex: number;
+      currentItemWidth: number;
+      isDesktop: boolean;
+    }) => (
       <div
-        className="w-8 md:w-12 rounded-t transition-all duration-300 hover:opacity-80 border border-blue-700 cursor-pointer"
-        style={{
-          height: `${Math.max(height, 20)}px`,
-          backgroundColor: "rgba(37, 99, 235, 0.6)",
-        }}
-        title={`${engineer.engenheiro}: ${formatValue(value)}`}
-      />
-      <div className="text-xs text-gray-700 font-medium text-center w-12 md:w-16 leading-tight">
-        {engineer.engenheiro.split(" ")[0]}
+        key={actualIndex}
+        className="flex flex-col items-center space-y-2 flex-shrink-0"
+        style={{ width: `${currentItemWidth - (isDesktop ? 16 : 8)}px` }}
+      >
+        <div className="text-xs text-gray-600 font-medium text-center w-12 md:w-16">
+          {formatValue(value)}
+        </div>
+        <div
+          className="w-8 md:w-12 rounded-t transition-all duration-300 hover:opacity-80 border border-blue-700 cursor-pointer"
+          style={{
+            height: `${Math.max(height, 20)}px`,
+            backgroundColor: "rgba(37, 99, 235, 0.6)",
+          }}
+          title={`${engineer.engenheiro}: ${formatValue(value)}`}
+        />
+        <div className="text-xs text-gray-700 font-medium text-center w-12 md:w-16 leading-tight">
+          {engineer.engenheiro.split(" ")[0]}
+        </div>
       </div>
-    </div>
-  ));
+    ),
+  );
 
   // Virtualization calculations
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
   const currentItemWidth = isDesktop ? ITEM_WIDTH_DESKTOP : ITEM_WIDTH;
-  
+
   const visibleRange = useMemo(() => {
     if (containerWidth === 0) return { start: 0, end: filteredData.length };
-    
+
     const visibleCount = Math.ceil(containerWidth / currentItemWidth);
-    const startIndex = Math.max(0, Math.floor(scrollLeft / currentItemWidth) - BUFFER_SIZE);
-    const endIndex = Math.min(filteredData.length, startIndex + visibleCount + (BUFFER_SIZE * 2));
-    
+    const startIndex = Math.max(
+      0,
+      Math.floor(scrollLeft / currentItemWidth) - BUFFER_SIZE,
+    );
+    const endIndex = Math.min(
+      filteredData.length,
+      startIndex + visibleCount + BUFFER_SIZE * 2,
+    );
+
     return { start: startIndex, end: endIndex };
   }, [scrollLeft, containerWidth, currentItemWidth, filteredData.length]);
 
@@ -145,13 +167,16 @@ export function AnalyticsCharts({
   const offsetLeft = visibleRange.start * currentItemWidth;
 
   // Handle scroll with throttling for better performance
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const scrollLeftValue = e.currentTarget.scrollLeft;
-    // Simple throttling - only update if difference is significant
-    if (Math.abs(scrollLeftValue - scrollLeft) > 10) {
-      setScrollLeft(scrollLeftValue);
-    }
-  }, [scrollLeft]);
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const scrollLeftValue = e.currentTarget.scrollLeft;
+      // Simple throttling - only update if difference is significant
+      if (Math.abs(scrollLeftValue - scrollLeft) > 10) {
+        setScrollLeft(scrollLeftValue);
+      }
+    },
+    [scrollLeft],
+  );
 
   // Update container width on resize
   useEffect(() => {
@@ -162,8 +187,8 @@ export function AnalyticsCharts({
     };
 
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
   return (
@@ -181,6 +206,7 @@ export function AnalyticsCharts({
             <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:gap-3">
               <div className="relative bg-gray-200 rounded-lg p-1 flex">
                 <button
+                  type="button"
                   onClick={() => setPerfMetric("faturamento")}
                   className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                     perfMetric === "faturamento"
@@ -191,6 +217,7 @@ export function AnalyticsCharts({
                   Faturamento
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPerfMetric("orcamento")}
                   className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                     perfMetric === "orcamento"
@@ -203,6 +230,7 @@ export function AnalyticsCharts({
               </div>
               <div className="relative bg-gray-200 rounded-lg p-1 flex">
                 <button
+                  type="button"
                   onClick={() => setPerfView("valor")}
                   className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                     perfView === "valor"
@@ -213,6 +241,7 @@ export function AnalyticsCharts({
                   Valores
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPerfView("quantidade")}
                   className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                     perfView === "quantidade"
@@ -230,30 +259,31 @@ export function AnalyticsCharts({
           <div className="h-80">
             {filteredData.length > 0 ? (
               <div className="h-full flex flex-col">
-                <div 
+                <div
                   ref={scrollContainerRef}
                   className="flex-1 overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                   onScroll={handleScroll}
-                  style={{ 
-                    scrollbarWidth: 'thin',
-                    scrollBehavior: 'smooth'
+                  style={{
+                    scrollbarWidth: "thin",
+                    scrollBehavior: "smooth",
                   }}
                 >
-                  <div 
+                  <div
                     className="relative h-full px-2 md:px-4"
                     style={{ width: `${totalWidth + 32}px` }}
                   >
                     <div
                       className="flex items-end justify-start space-x-2 md:space-x-4 h-full absolute"
-                      style={{ 
+                      style={{
                         left: `${offsetLeft}px`,
-                        width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`
+                        width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`,
                       }}
                     >
                       {visibleData.map((engineer, relativeIndex) => {
                         const actualIndex = visibleRange.start + relativeIndex;
                         const value = getEngineerValue(engineer);
-                        const height = maxValue > 0 ? (value / maxValue) * 200 : 0;
+                        const height =
+                          maxValue > 0 ? (value / maxValue) * 200 : 0;
                         return (
                           <ChartBar
                             key={actualIndex}
@@ -267,11 +297,13 @@ export function AnalyticsCharts({
                         );
                       })}
                     </div>
-                    
+
                     {/* Scroll indicator */}
                     {filteredData.length > 10 && (
                       <div className="absolute bottom-0 right-4 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm">
-                        {visibleRange.start + 1}-{Math.min(visibleRange.end, filteredData.length)} de {filteredData.length}
+                        {visibleRange.start + 1}-
+                        {Math.min(visibleRange.end, filteredData.length)} de{" "}
+                        {filteredData.length}
                       </div>
                     )}
                   </div>
@@ -296,7 +328,7 @@ export function AnalyticsCharts({
                           filteredData.reduce((max, curr) =>
                             getEngineerValue(curr) > getEngineerValue(max)
                               ? curr
-                              : max
+                              : max,
                           ).engenheiro
                         }
                       </div>
@@ -308,12 +340,12 @@ export function AnalyticsCharts({
                           ? formatCurrency(
                               filteredData.reduce(
                                 (sum, curr) => sum + getEngineerValue(curr),
-                                0
-                              )
+                                0,
+                              ),
                             )
                           : filteredData.reduce(
                               (sum, curr) => sum + getEngineerValue(curr),
-                              0
+                              0,
                             )}
                       </div>
                     </div>

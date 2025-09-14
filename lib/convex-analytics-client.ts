@@ -22,7 +22,7 @@ export interface RawDataRow {
 
 // Stub hooks - replace with actual Convex hooks
 export function useSaveAnalyticsData() {
-  return async (data: any) => ({ success: true });
+  return async (params: any) => ({ success: true });
 }
 
 export function useAnalyticsData() {
@@ -38,17 +38,17 @@ export function useClearAnalyticsData() {
 }
 
 export function useInitializeAnalyticsUpload() {
-  return async (data: any) => ({ success: true, uploadId: "stub" });
+  return async (params: any) => ({ success: true, uploadId: "stub" });
 }
 
 export function useSaveAnalyticsDataBatch() {
-  return async (data: any) => ({ success: true });
+  return async (params: any) => ({ success: true });
 }
 
 export function useSaveAnalyticsRawDataBatch() {
-  return async (data: any) => ({ success: true });
+  return async (params: any) => ({ success: true });
 }
 
 export function useFinalizeAnalyticsUpload() {
-  return async (data: any) => ({ success: true });
+  return async (params: any) => ({ success: true });
 }

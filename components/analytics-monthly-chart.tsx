@@ -1,18 +1,18 @@
-import { BarChart3, User, Building } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3, Building, User } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  DEPARTAMENTOS,
+  getDepartamentoByResponsavel,
+  RESPONSAVEIS,
+} from "../components/dashboard/types";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import {
-  RESPONSAVEIS,
-  DEPARTAMENTOS,
-  getDepartamentoByResponsavel,
-} from "@/components/dashboard/types";
+} from "../ui/select";
 
 interface AnalyticsMonthlyChartProps {
   uploadedData: any[];
@@ -38,7 +38,7 @@ export function AnalyticsMonthlyChart({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
-  
+
   // Chart item dimensions
   const ITEM_WIDTH_MOBILE = 80;
   const ITEM_WIDTH_DESKTOP = 120;
@@ -165,7 +165,7 @@ export function AnalyticsMonthlyChart({
       ? currentYear
       : availableYears[0];
     setSelectedYear(defaultYear);
-  }, [availableYears.length]);
+  }, [availableYears, selectedYear]);
 
   // Keep comparison metric aligned to selected metric
   useEffect(() => {
@@ -240,7 +240,7 @@ export function AnalyticsMonthlyChart({
   const getChartData = () => {
     const monthsWithData = filterMonthsWithData(
       filteredDataByYear,
-      selectedMetric
+      selectedMetric,
     );
     return monthsWithData.map((month) => ({
       ...month,
@@ -264,8 +264,8 @@ export function AnalyticsMonthlyChart({
   const maxValue = isComparison
     ? Math.max(
         ...comparisonData.flatMap((month) =>
-          Object.values(month.years).map((year: any) => year.value)
-        )
+          Object.values(month.years).map((year: any) => year.value),
+        ),
       )
     : Math.max(...chartData.map((item) => item.value));
 
@@ -320,20 +320,30 @@ export function AnalyticsMonthlyChart({
   };
 
   // Virtualization calculations
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-  const currentItemWidth = isComparison 
-    ? (isDesktop ? COMPARISON_WIDTH_DESKTOP : COMPARISON_WIDTH_MOBILE)
-    : (isDesktop ? ITEM_WIDTH_DESKTOP : ITEM_WIDTH_MOBILE);
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
+  const currentItemWidth = isComparison
+    ? isDesktop
+      ? COMPARISON_WIDTH_DESKTOP
+      : COMPARISON_WIDTH_MOBILE
+    : isDesktop
+      ? ITEM_WIDTH_DESKTOP
+      : ITEM_WIDTH_MOBILE;
 
   const activeData = isComparison ? comparisonData : chartData;
 
   const visibleRange = useMemo(() => {
     if (containerWidth === 0) return { start: 0, end: activeData.length };
-    
+
     const visibleCount = Math.ceil(containerWidth / currentItemWidth);
-    const startIndex = Math.max(0, Math.floor(scrollLeft / currentItemWidth) - BUFFER_SIZE);
-    const endIndex = Math.min(activeData.length, startIndex + visibleCount + (BUFFER_SIZE * 2));
-    
+    const startIndex = Math.max(
+      0,
+      Math.floor(scrollLeft / currentItemWidth) - BUFFER_SIZE,
+    );
+    const endIndex = Math.min(
+      activeData.length,
+      startIndex + visibleCount + BUFFER_SIZE * 2,
+    );
+
     return { start: startIndex, end: endIndex };
   }, [scrollLeft, containerWidth, currentItemWidth, activeData.length]);
 
@@ -344,14 +354,17 @@ export function AnalyticsMonthlyChart({
   const totalWidth = activeData.length * currentItemWidth;
   const offsetLeft = visibleRange.start * currentItemWidth;
 
-  // Handle scroll with throttling for better performance  
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const scrollLeftValue = e.currentTarget.scrollLeft;
-    // Simple throttling - only update if difference is significant
-    if (Math.abs(scrollLeftValue - scrollLeft) > 15) {
-      setScrollLeft(scrollLeftValue);
-    }
-  }, [scrollLeft]);
+  // Handle scroll with throttling for better performance
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const scrollLeftValue = e.currentTarget.scrollLeft;
+      // Simple throttling - only update if difference is significant
+      if (Math.abs(scrollLeftValue - scrollLeft) > 15) {
+        setScrollLeft(scrollLeftValue);
+      }
+    },
+    [scrollLeft],
+  );
 
   // Update container width on resize
   useEffect(() => {
@@ -362,8 +375,8 @@ export function AnalyticsMonthlyChart({
     };
 
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
   return (
@@ -428,7 +441,7 @@ export function AnalyticsMonthlyChart({
                     value={selectedYear || ""}
                     onChange={(e) =>
                       setSelectedYear(
-                        e.target.value ? parseInt(e.target.value) : null
+                        e.target.value ? parseInt(e.target.value) : null,
                       )
                     }
                     className={`px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -536,24 +549,24 @@ export function AnalyticsMonthlyChart({
         <div className="h-80">
           {isComparison && comparisonData.length > 0 && maxValue > 0 ? (
             <div className="h-full flex flex-col">
-              <div 
+              <div
                 ref={scrollContainerRef}
                 className="flex-1 overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                 onScroll={handleScroll}
-                style={{ 
-                  scrollbarWidth: 'thin',
-                  scrollBehavior: 'smooth'
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollBehavior: "smooth",
                 }}
               >
-                <div 
+                <div
                   className="relative h-full px-2 md:px-4"
                   style={{ width: `${totalWidth + 32}px` }}
                 >
                   <div
                     className="flex items-end justify-start space-x-4 md:space-x-8 h-full absolute"
-                    style={{ 
+                    style={{
                       left: `${offsetLeft}px`,
-                      width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`
+                      width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`,
                     }}
                   >
                     {visibleData.map((month, relativeIndex) => {
@@ -563,55 +576,55 @@ export function AnalyticsMonthlyChart({
                           key={monthIndex}
                           className="flex flex-col items-center space-y-2 flex-shrink-0"
                         >
-                      <div className="flex items-end space-x-3">
-                        {availableYears.map((year, yearIndex) => {
-                          const yearData = month.years[year];
-                          if (!yearData) return null;
-                          const height =
-                            maxValue > 0
-                              ? (yearData.value / maxValue) * 180
-                              : 0;
-                          const colors = [
-                            "rgba(59, 130, 246, 0.8)",
-                            "rgba(16, 185, 129, 0.8)",
-                            "rgba(245, 158, 11, 0.8)",
-                            "rgba(239, 68, 68, 0.8)",
-                            "rgba(139, 92, 246, 0.8)",
-                          ];
-                          const displayValue =
-                            comparisonMetric === "conversao" &&
-                            viewMode === "valor"
-                              ? `${yearData.value.toFixed(1)}%`
-                              : viewMode === "valor"
-                                ? new Intl.NumberFormat("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                  }).format(yearData.value)
-                                : String(yearData.value);
-                          return (
-                            <div
-                              key={year}
-                              className="flex flex-col items-center space-y-1"
-                            >
-                              <div className="text-xs text-gray-600 font-medium text-center w-12 md:w-16">
-                                {displayValue}
-                              </div>
-                              <div
-                                className="w-8 md:w-10 rounded-t transition-all duration-500 hover:opacity-80 border border-gray-400"
-                                style={{
-                                  height: `${Math.max(height, 12)}px`,
-                                  backgroundColor:
-                                    colors[yearIndex % colors.length],
-                                }}
-                                title={`${month.mesNome} ${year}: ${displayValue}`}
-                              ></div>
-                              <div className="text-xs text-gray-500 font-medium text-center w-8 md:w-10">
-                                {year}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                          <div className="flex items-end space-x-3">
+                            {availableYears.map((year, yearIndex) => {
+                              const yearData = month.years[year];
+                              if (!yearData) return null;
+                              const height =
+                                maxValue > 0
+                                  ? (yearData.value / maxValue) * 180
+                                  : 0;
+                              const colors = [
+                                "rgba(59, 130, 246, 0.8)",
+                                "rgba(16, 185, 129, 0.8)",
+                                "rgba(245, 158, 11, 0.8)",
+                                "rgba(239, 68, 68, 0.8)",
+                                "rgba(139, 92, 246, 0.8)",
+                              ];
+                              const displayValue =
+                                comparisonMetric === "conversao" &&
+                                viewMode === "valor"
+                                  ? `${yearData.value.toFixed(1)}%`
+                                  : viewMode === "valor"
+                                    ? new Intl.NumberFormat("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL",
+                                      }).format(yearData.value)
+                                    : String(yearData.value);
+                              return (
+                                <div
+                                  key={year}
+                                  className="flex flex-col items-center space-y-1"
+                                >
+                                  <div className="text-xs text-gray-600 font-medium text-center w-12 md:w-16">
+                                    {displayValue}
+                                  </div>
+                                  <div
+                                    className="w-8 md:w-10 rounded-t transition-all duration-500 hover:opacity-80 border border-gray-400"
+                                    style={{
+                                      height: `${Math.max(height, 12)}px`,
+                                      backgroundColor:
+                                        colors[yearIndex % colors.length],
+                                    }}
+                                    title={`${month.mesNome} ${year}: ${displayValue}`}
+                                  ></div>
+                                  <div className="text-xs text-gray-500 font-medium text-center w-8 md:w-10">
+                                    {year}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                           <div className="text-xs text-gray-700 font-medium text-center mt-2">
                             {month.mesNome}
                           </div>
@@ -619,11 +632,13 @@ export function AnalyticsMonthlyChart({
                       );
                     })}
                   </div>
-                  
+
                   {/* Scroll indicator */}
                   {comparisonData.length > 5 && (
                     <div className="absolute bottom-0 right-4 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm">
-                      {visibleRange.start + 1}-{Math.min(visibleRange.end, comparisonData.length)} de {comparisonData.length}
+                      {visibleRange.start + 1}-
+                      {Math.min(visibleRange.end, comparisonData.length)} de{" "}
+                      {comparisonData.length}
                     </div>
                   )}
                 </div>
@@ -631,61 +646,79 @@ export function AnalyticsMonthlyChart({
             </div>
           ) : chartData.length > 0 && maxValue > 0 ? (
             <div className="h-full flex flex-col">
-              <div 
+              <div
                 ref={isComparison ? undefined : scrollContainerRef}
                 className="flex-1 overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                 onScroll={isComparison ? undefined : handleScroll}
-                style={{ 
-                  scrollbarWidth: 'thin',
-                  scrollBehavior: 'smooth'
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollBehavior: "smooth",
                 }}
               >
-                <div 
+                <div
                   className="relative h-full px-2 md:px-4"
-                  style={{ width: `${isComparison ? 'auto' : totalWidth + 32}px` }}
+                  style={{
+                    width: `${isComparison ? "auto" : totalWidth + 32}px`,
+                  }}
                 >
                   <div
                     className="flex items-end justify-start space-x-6 md:space-x-12 h-full absolute"
-                    style={isComparison ? {} : { 
-                      left: `${offsetLeft}px`,
-                      width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`
-                    }}
+                    style={
+                      isComparison
+                        ? {}
+                        : {
+                            left: `${offsetLeft}px`,
+                            width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`,
+                          }
+                    }
                   >
-                    {(isComparison ? chartData : visibleData).map((month, relativeIndex) => {
-                      const actualIndex = isComparison ? relativeIndex : visibleRange.start + relativeIndex;
-                      const height =
-                        maxValue > 0 ? (month.value / maxValue) * 200 : 0;
-                      return (
-                        <div
-                          key={actualIndex}
-                          className="flex flex-col items-center space-y-2 flex-shrink-0"
-                          style={isComparison ? {} : { width: `${currentItemWidth - (isDesktop ? 48 : 24)}px` }}
-                        >
-                          <div className="text-xs text-gray-600 font-medium text-center w-16 md:w-18">
-                            {formatValue(month.value)}
-                          </div>
+                    {(isComparison ? chartData : visibleData).map(
+                      (month, relativeIndex) => {
+                        const actualIndex = isComparison
+                          ? relativeIndex
+                          : visibleRange.start + relativeIndex;
+                        const height =
+                          maxValue > 0 ? (month.value / maxValue) * 200 : 0;
+                        return (
                           <div
-                            className={
-                              "w-8 md:w-12 rounded-t transition-all duration-300 hover:opacity-80 border border-blue-700 cursor-pointer"
+                            key={actualIndex}
+                            className="flex flex-col items-center space-y-2 flex-shrink-0"
+                            style={
+                              isComparison
+                                ? {}
+                                : {
+                                    width: `${currentItemWidth - (isDesktop ? 48 : 24)}px`,
+                                  }
                             }
-                            style={{
-                              height: `${Math.max(height, 16)}px`,
-                              backgroundColor: "rgba(59, 130, 246, 0.7)",
-                            }}
-                            title={`${formatMonthLabel(month, chartData)}: ${formatValue(month.value)}`}
-                          ></div>
-                          <div className="text-xs text-gray-700 font-medium text-center w-16 md:w-18 leading-tight">
-                            {formatMonthLabel(month, chartData)}
+                          >
+                            <div className="text-xs text-gray-600 font-medium text-center w-16 md:w-18">
+                              {formatValue(month.value)}
+                            </div>
+                            <div
+                              className={
+                                "w-8 md:w-12 rounded-t transition-all duration-300 hover:opacity-80 border border-blue-700 cursor-pointer"
+                              }
+                              style={{
+                                height: `${Math.max(height, 16)}px`,
+                                backgroundColor: "rgba(59, 130, 246, 0.7)",
+                              }}
+                              title={`${formatMonthLabel(month, chartData)}: ${formatValue(month.value)}`}
+                            ></div>
+                            <div className="text-xs text-gray-700 font-medium text-center w-16 md:w-18 leading-tight">
+                              {formatMonthLabel(month, chartData)}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      },
+                    )}
                   </div>
-                  
+
                   {/* Scroll indicator for regular chart */}
                   {!isComparison && chartData.length > 5 && (
                     <div className="absolute bottom-0 right-4 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm">
-                      {visibleRange.start + 1}-{Math.min(visibleRange.end, chartData.length)} de {chartData.length}
+                      {visibleRange.start + 1}-
+                      {Math.min(visibleRange.end, chartData.length)} de{" "}
+                      {chartData.length}
                     </div>
                   )}
                 </div>

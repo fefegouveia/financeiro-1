@@ -1,5 +1,5 @@
-import { BarChart3, Wrench, Users, DollarSign, TrendingUp } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { BarChart3, DollarSign, TrendingUp, Users, Wrench } from "lucide-react";
+import { Card, CardContent } from "../ui/card";
 
 interface AnalyticsMetricsProps {
   uploadedData: any[];
@@ -16,30 +16,30 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
   // Calculate metrics
   const totalRegistros = uploadedData.reduce(
     (sum, row) => sum + row.registros,
-    0
+    0,
   );
   const totalServicos = uploadedData.reduce(
     (sum, row) => sum + row.servicos,
-    0
+    0,
   );
   const totalPecas = uploadedData.reduce((sum, row) => sum + row.pecas, 0);
   const valorTotalFaturado = uploadedData.reduce(
     (sum, row) => sum + row.valorTotal,
-    0
+    0,
   );
   const valorTotalOrcamentos = uploadedData.reduce(
     (sum, row) => sum + row.valorOrcamentos,
-    0
+    0,
   );
 
   // Calcular taxa de conversão geral
   const totalOrcamentos = uploadedData.reduce(
     (sum, row) => sum + row.projetos,
-    0
+    0,
   );
   const totalFaturados = uploadedData.reduce(
     (sum, row) => sum + row.quantidade,
-    0
+    0,
   );
   const taxaConversao =
     totalOrcamentos > 0 ? (totalFaturados / totalOrcamentos) * 100 : 0;
