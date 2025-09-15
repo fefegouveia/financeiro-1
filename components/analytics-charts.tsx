@@ -109,7 +109,7 @@ export function AnalyticsCharts({
       currentItemWidth,
       isDesktop,
     }: {
-      engineer: any;
+      engineer: EngineerData;
       value: number;
       height: number;
       actualIndex: number;

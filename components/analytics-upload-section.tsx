@@ -21,18 +21,37 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { AnalyticsFilters } from "./analytics-filters";
 
+interface UploadedDataItem {
+  engenheiro?: string;
+  ano?: number | string;
+  mes?: number | string;
+}
+
+interface DepartmentInfo {
+  gerente: string;
+  colaboradores: string[];
+}
+
+interface DepartmentMap {
+  vendas: DepartmentInfo;
+  servicos: DepartmentInfo;
+  engenhariaeassistencia: DepartmentInfo;
+  externos: DepartmentInfo;
+}
+
+type DepartmentKey = keyof DepartmentMap;
+
 interface AnalyticsUploadSectionProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   fileName: string;
   saveStatus: "idle" | "saving" | "saved" | "error";
-  uploadedData: any[];
+  uploadedData: UploadedDataItem[];
   uploadHistory: AnalyticsUpload[];
   isLoading: boolean;
   onUploadClick: () => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSaveData: () => void;
   onPrint: () => void;
-  onGenerateReport: () => void;
   onClearData: () => void;
   selectedDepartment: string;
   setSelectedDepartment: (value: string) => void;
@@ -57,7 +76,6 @@ export function AnalyticsUploadSection({
   onFileUpload,
   onSaveData,
   onPrint,
-  onGenerateReport,
   onClearData,
   selectedDepartment,
   setSelectedDepartment,
@@ -95,19 +113,18 @@ export function AnalyticsUploadSection({
   }, []);
 
   // Função para normalizar nomes (igual do filtro)
-  function normalizeName(name: string) {
-    return name?.toLowerCase().replace(/\s+/g, "").trim();
+  function normalizeName(name: string | undefined): string {
+    return name?.toLowerCase().replace(/\s+/g, "").trim() || "";
   }
 
   // Mapeamento dos departamentos e colaboradores (igual do filtro)
-  const departmentMap = {
+  const departmentMap: DepartmentMap = {
     vendas: {
       gerente: "Sobrinho",
       colaboradores: [
         "Sobrinho",
         "Mamede",
         "Giovana",
-
         "LENILTON",
       ],
     },
@@ -141,9 +158,9 @@ export function AnalyticsUploadSection({
       selectedDepartment === "engenhariaeassistencia" ||
       selectedDepartment === "externos"
     ) {
-      const colabs =
-        departmentMap[selectedDepartment].colaboradores.map(normalizeName);
-      filteredDataForFilters = filteredDataForFilters.filter((row) =>
+      const departmentKey = selectedDepartment as DepartmentKey;
+      const colabs = departmentMap[departmentKey].colaboradores.map(normalizeName);
+      filteredDataForFilters = filteredDataForFilters.filter((row: UploadedDataItem) =>
         colabs.includes(normalizeName(row.engenheiro)),
       );
     } else if (selectedDepartment === "outros") {
@@ -154,23 +171,23 @@ export function AnalyticsUploadSection({
         ...departmentMap.externos.colaboradores,
       ].map(normalizeName);
       filteredDataForFilters = filteredDataForFilters.filter(
-        (row) => !allColabs.includes(normalizeName(row.engenheiro)),
+        (row: UploadedDataItem) => !allColabs.includes(normalizeName(row.engenheiro)),
       );
     }
   }
   if (selectedEngineer !== "todos") {
     filteredDataForFilters = filteredDataForFilters.filter(
-      (row) => normalizeName(row.engenheiro) === selectedEngineer,
+      (row: UploadedDataItem) => normalizeName(row.engenheiro) === selectedEngineer,
     );
   }
   if (selectedYear !== "todos") {
     filteredDataForFilters = filteredDataForFilters.filter(
-      (row) => row.ano?.toString() === selectedYear,
+      (row: UploadedDataItem) => row.ano?.toString() === selectedYear,
     );
   }
   if (selectedMonth !== "todos") {
     filteredDataForFilters = filteredDataForFilters.filter(
-      (row) => row.mes?.toString().padStart(2, "0") === selectedMonth,
+      (row: UploadedDataItem) => row.mes?.toString().padStart(2, "0") === selectedMonth,
     );
   }
 
@@ -241,7 +258,7 @@ export function AnalyticsUploadSection({
                   Histórico de Uploads
                 </h3>
               </div>
-              {uploadHistory.map((upload, index) => (
+              {uploadHistory.map((upload) => (
                 <div
                   key={upload._id}
                   className="p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"

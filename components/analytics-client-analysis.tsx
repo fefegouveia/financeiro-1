@@ -1,14 +1,28 @@
-import { AlertCircle, FileText, TrendingUp, Users } from "lucide-react";
+import { AlertCircle, FileText, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { RawDataRow } from "../lib/convex-analytics-client";
 
-// Stub types and components for missing dependencies
+// Types for virtualized list
 interface ListChildComponentProps {
   index: number;
   style: React.CSSProperties;
 }
 
-const List = ({ children, height, width, itemCount, itemSize }: any) => (
+interface ListProps {
+  children: (props: ListChildComponentProps) => React.ReactNode;
+  height: number;
+  width: string | number;
+  itemCount: number;
+  itemSize: number;
+}
+
+const List: React.FC<ListProps> = ({
+  children,
+  height,
+  width,
+  itemCount,
+  itemSize,
+}) => (
   <div style={{ height, width, overflow: "auto" }}>
     {Array.from({ length: itemCount }, (_, index) =>
       children({ index, style: { height: itemSize } }),
@@ -16,25 +30,46 @@ const List = ({ children, height, width, itemCount, itemSize }: any) => (
   </div>
 );
 
-const useClientSummary = (params?: any) => [];
+interface ClientSummaryParams {
+  year?: number;
+  month?: number;
+  engineer?: string;
+  limit?: number;
+}
+
+interface ClientSummaryResult {
+  cliente: string;
+  orcamentos: number;
+  valorOrcamentos: number;
+  faturamentos: number;
+  valorFaturamentos: number;
+}
+
+const useClientSummary = (
+  _params?: ClientSummaryParams,
+): ClientSummaryResult[] => [];
 
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
+interface ClientData {
+  cliente: string;
+  orcamentos: number;
+  valorOrcamentos: number;
+  faturamentos: number;
+  valorFaturamentos: number;
+}
+
+interface ClientDataWithNonConverted extends ClientData {
+  orcamentosNaoConvertidos: number;
+  valorNaoConvertido: number;
+}
+
 interface AnalyticsClientAnalysisProps {
-  uploadedData: any[];
   rawData?: RawDataRow[];
-  // optional filters
-  selectedYear?: string;
-  selectedMonth?: string;
-  selectedEngineer?: string;
 }
 
 export function AnalyticsClientAnalysis({
-  uploadedData,
   rawData,
-  selectedYear,
-  selectedMonth,
-  selectedEngineer,
 }: AnalyticsClientAnalysisProps) {
   const [activeTab, setActiveTab] = useState<"faturamento" | "orcamentos">(
     "faturamento",
@@ -48,26 +83,10 @@ export function AnalyticsClientAnalysis({
   };
 
   // Tentar buscar um resumo do servidor quando rawData não for passado
-  const yearNum =
-    selectedYear && selectedYear !== "todos" ? Number(selectedYear) : undefined;
-  const monthNum =
-    selectedMonth && selectedMonth !== "todos"
-      ? Number(selectedMonth)
-      : undefined;
-  const engineer =
-    selectedEngineer && selectedEngineer !== "todos"
-      ? selectedEngineer
-      : undefined;
-  const serverSummary =
-    useClientSummary({
-      year: yearNum,
-      month: monthNum,
-      engineer,
-      limit: 1000,
-    }) || [];
+  const serverSummary = useClientSummary() || [];
 
   // Processar dados dos clientes usando dados brutos se disponíveis; caso contrário, usar o resumo do servidor
-  const clientesMap = new Map();
+  const clientesMap = new Map<string, ClientData>();
   let hasClientData = false;
 
   if (rawData && rawData.length > 0) {
@@ -97,6 +116,8 @@ export function AnalyticsClientAnalysis({
       const existing = clientesMap.get(cliente);
       const conversionsSet = uniqueConversions.get(cliente);
       const orcamentosSet = uniqueOrcamentos.get(cliente);
+
+      if (!existing) return;
 
       if (row.isOrcamento) {
         existing.valorOrcamentos += row.valor;
@@ -129,7 +150,7 @@ export function AnalyticsClientAnalysis({
   } else if (serverSummary && serverSummary.length > 0) {
     // Fallback: usar resumo processado no servidor a partir do analyticsRawData
     hasClientData = true;
-    for (const row of serverSummary as any[]) {
+    for (const row of serverSummary) {
       clientesMap.set(row.cliente, {
         cliente: row.cliente,
         orcamentos: row.orcamentos,
@@ -152,14 +173,19 @@ export function AnalyticsClientAnalysis({
   const orcamentosNaoConvertidosList = useMemo(
     () =>
       [...clientes]
-        .map((c: any) => ({
-          ...c,
-          orcamentosNaoConvertidos: Math.max(0, c.orcamentos - c.faturamentos),
-          valorNaoConvertido: Math.max(
-            0,
-            c.valorOrcamentos - c.valorFaturamentos,
-          ),
-        }))
+        .map(
+          (c: ClientData): ClientDataWithNonConverted => ({
+            ...c,
+            orcamentosNaoConvertidos: Math.max(
+              0,
+              c.orcamentos - c.faturamentos,
+            ),
+            valorNaoConvertido: Math.max(
+              0,
+              c.valorOrcamentos - c.valorFaturamentos,
+            ),
+          }),
+        )
         .sort(
           (a, b) => b.orcamentosNaoConvertidos - a.orcamentosNaoConvertidos,
         ),
@@ -202,9 +228,9 @@ export function AnalyticsClientAnalysis({
 
   // Row renderers
   const renderFaturamentoRow = ({ index, style }: ListChildComponentProps) => {
-    const cliente = faturamentoList[index] as any;
+    const cliente = faturamentoList[index];
     return (
-      <div style={style} className="flex items-center justify-between px-3">
+      <div key={`faturamento-${index}-${cliente.cliente}`} style={style} className="flex items-center justify-between px-3">
         <div className="flex items-center space-x-3 min-w-0">
           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
             {index + 1}
@@ -228,9 +254,9 @@ export function AnalyticsClientAnalysis({
   };
 
   const renderOrcamentoRow = ({ index, style }: ListChildComponentProps) => {
-    const cliente = orcamentosNaoConvertidosList[index] as any;
+    const cliente = orcamentosNaoConvertidosList[index];
     return (
-      <div style={style} className="flex items-center justify-between px-3">
+      <div key={`orcamento-${index}-${cliente.cliente}`} style={style} className="flex items-center justify-between px-3">
         <div className="flex items-center space-x-3 min-w-0">
           <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
             {index + 1}
@@ -289,7 +315,7 @@ export function AnalyticsClientAnalysis({
                   : "text-gray-600 hover:text-gray-800"
               }`}
             >
-              <FileText className="h-3 w-8 inline mr-1" />
+              <FileText className="h-3 w-3 inline mr-1" />
               Não Aprovados
             </button>
           </div>

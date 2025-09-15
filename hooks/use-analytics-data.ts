@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import {
   type AnalyticsUpload,
@@ -105,7 +105,7 @@ export function useAnalyticsData() {
   }, [uploadHistoryData]);
 
   // Função para carregar dados salvos
-  const loadSavedData = async () => {
+  const loadSavedData = useCallback(async () => {
     setIsLoading(true);
     try {
       console.log("Loading saved data...", savedData);
@@ -155,17 +155,17 @@ export function useAnalyticsData() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [savedData]);
 
-  const loadUploadHistory = async () => {
+  const loadUploadHistory = useCallback(async () => {
     try {
       if (uploadHistoryData) {
         setUploadHistory(uploadHistoryData);
       }
     } catch (error) {}
-  };
+  }, [uploadHistoryData]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -688,9 +688,9 @@ export function useAnalyticsData() {
       }
     };
     reader.readAsArrayBuffer(file);
-  };
+  }, []);
 
-  const handleSaveData = async () => {
+  const handleSaveData = useCallback(async () => {
     if (uploadedData.length === 0) {
       alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.");
       return;
@@ -850,9 +850,9 @@ export function useAnalyticsData() {
       setTimeout(() => setSaveStatus("idle"), 3000);
       alert("Erro ao salvar dados. Tente novamente.");
     }
-  };
+  }, [uploadedData, rawData, fileName, saveAnalyticsMutation, clearDataMutation, initializeUpload, saveDataBatch, saveRawDataBatch, finalizeUpload, loadUploadHistory]);
 
-  const handleClearData = async () => {
+  const handleClearData = useCallback(async () => {
     if (
       confirm(
         "Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.",
@@ -872,9 +872,9 @@ export function useAnalyticsData() {
         setIsLoading(false);
       }
     }
-  };
+  }, [clearDataMutation]);
 
-  const generateDetailedReport = () => {
+  const generateDetailedReport = useCallback(() => {
     if (!processingSummary || uploadedData.length === 0) {
       alert("Nenhum dado processado disponível para relatório.");
       return;
@@ -1167,7 +1167,7 @@ export function useAnalyticsData() {
     alert(
       `Relatório detalhado gerado com sucesso!\nArquivo: ${filename}\n\nO relatório contém 5 abas:\n• Resumo Geral\n• Breakdown por Engenheiro\n• Ranking por Orçamentos\n• Ranking por Faturamento\n• Métricas Consolidadas`,
     );
-  };
+  }, [processingSummary, uploadedData, fileName]);
 
   return {
     uploadedData,

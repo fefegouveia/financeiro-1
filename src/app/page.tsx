@@ -72,7 +72,6 @@ export function AnalyticsPage() {
     handleFileUpload,
     handleSaveData,
     handleClearData,
-    generateDetailedReport,
   } = useAnalyticsData();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -246,7 +245,6 @@ export function AnalyticsPage() {
         onFileUpload={handleFileUpload}
         onSaveData={handleSaveData}
         onPrint={handlePrint}
-        onGenerateReport={generateDetailedReport}
         onClearData={handleClearData}
         // Passar filtros e setters - usar dados originais para filtros
         selectedDepartment={selectedDepartment}
@@ -289,13 +287,7 @@ export function AnalyticsPage() {
           <AnalyticsRanking uploadedData={displayData} />
 
           {/* Client Analysis */}
-          <AnalyticsClientAnalysis
-            uploadedData={displayData}
-            rawData={filteredRawData}
-            selectedYear={selectedYear}
-            selectedMonth={selectedMonth}
-            selectedEngineer={selectedEngineer}
-          />
+          <AnalyticsClientAnalysis rawData={filteredRawData} />
 
           {/* Admin Data Table */}
           <AnalyticsAdminData uploadedData={displayData} />
@@ -321,3 +313,5 @@ export function AnalyticsPage() {
     </ResponsiveLayout>
   );
 }
+
+export default AnalyticsPage;

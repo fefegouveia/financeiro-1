@@ -1,4 +1,5 @@
 // Stub implementation for convex-analytics-client
+import React from 'react';
 export interface AnalyticsUpload {
   _id: string;
   fileName: string;
@@ -20,17 +21,38 @@ export interface RawDataRow {
   isVendaServicos: boolean;
 }
 
+export interface AnalyticsDataRow {
+  engenheiro: string;
+  ano: number;
+  mes: number;
+  registros: number;
+  servicos: number;
+  pecas: number;
+  valorTotal: number;
+  valorPecas: number;
+  valorServicos: number;
+  valorOrcamentos: number;
+  projetos: number;
+  quantidade: number;
+  cliente?: string;
+}
+
 // Stub hooks - replace with actual Convex hooks
 export function useSaveAnalyticsData() {
-  return async (params: any) => ({ success: true });
+  return async (_params: {
+    data: AnalyticsDataRow[];
+    rawData: RawDataRow[];
+    fileName: string;
+    uploadedBy: string;
+  }) => ({ success: true });
 }
 
 export function useAnalyticsData() {
-  return null;
+  return React.useMemo(() => null, []);
 }
 
 export function useUploadHistory() {
-  return [];
+  return React.useMemo(() => [], []);
 }
 
 export function useClearAnalyticsData() {
@@ -38,17 +60,25 @@ export function useClearAnalyticsData() {
 }
 
 export function useInitializeAnalyticsUpload() {
-  return async (params: any) => ({ success: true, uploadId: "stub" });
+  return async (_params: {
+    fileName: string;
+    uploadedBy: string;
+    totalRecords: number;
+  }) => ({ success: true, uploadId: "stub" });
 }
 
 export function useSaveAnalyticsDataBatch() {
-  return async (params: any) => ({ success: true });
+  return async (_params: { data: AnalyticsDataRow[]; uploadId: string }) => ({
+    success: true,
+  });
 }
 
 export function useSaveAnalyticsRawDataBatch() {
-  return async (params: any) => ({ success: true });
+  return async (_params: { rawData: RawDataRow[]; uploadId: string }) => ({
+    success: true,
+  });
 }
 
 export function useFinalizeAnalyticsUpload() {
-  return async (params: any) => ({ success: true });
+  return async (_params: { uploadId: string }) => ({ success: true });
 }

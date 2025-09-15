@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DEPARTAMENTOS,
   getDepartamentoByResponsavel,
-  RESPONSAVEIS,
-} from "../components/dashboard/types";
+  type Departamento,
+} from "../types/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   Select,
@@ -14,8 +14,24 @@ import {
   SelectValue,
 } from "../ui/select";
 
+interface MonthlyDataItem {
+  mes?: number;
+  ano?: number;
+  mesNome?: string;
+  valorOrcamentos?: number;
+  valorFaturamento?: number;
+  quantidadeOrcamentos?: number;
+  quantidadeFaturados?: number;
+  conversao?: number;
+  responsavel?: string;
+  valorTotal?: number;
+  quantidade?: number;
+  projetos?: number;
+  engenheiro?: string;
+}
+
 interface AnalyticsMonthlyChartProps {
-  uploadedData: any[];
+  uploadedData: MonthlyDataItem[];
 }
 
 export function AnalyticsMonthlyChart({
@@ -46,19 +62,10 @@ export function AnalyticsMonthlyChart({
   const COMPARISON_WIDTH_DESKTOP = 160;
   const BUFFER_SIZE = 3;
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
 
   // Funcao para filtrar dados por departamento
-  const filterDataByDepartamento = (data: any[]) => {
+  const filterDataByDepartamento = (data: MonthlyDataItem[]) => {
     if (!selectedDepartamento) return data;
 
     return data.filter((row) => {
@@ -71,14 +78,14 @@ export function AnalyticsMonthlyChart({
   };
 
   // Funcao para agregar dados por mes e ano
-  const aggregateMonthlyData = (data: any[]) => {
+  const aggregateMonthlyData = (data: MonthlyDataItem[]) => {
     const filteredData = filterDataByDepartamento(data);
     const monthlyYearMap = new Map();
 
     // Agregar dados dos meses que tem informacoes
     filteredData.forEach((row) => {
-      const month = parseInt(row.mes?.toString() || "1");
-      const year = parseInt(row.ano?.toString() || "2025");
+      const month = parseInt(row.mes?.toString() || "1", 10);
+      const year = parseInt(row.ano?.toString() || "2025", 10);
 
       if (month >= 1 && month <= 12) {
         const key = `${year}-${month.toString().padStart(2, "0")}`;
@@ -138,12 +145,12 @@ export function AnalyticsMonthlyChart({
   };
 
   // Calcular porcentagem de conversao
-  const calculateConversionRate = (monthlyData: any[]) => {
+  const calculateConversionRate = (monthlyData: MonthlyDataItem[]) => {
     return monthlyData.map((month) => ({
       ...month,
       conversao:
-        month.quantidadeOrcamentos > 0
-          ? (month.quantidadeFaturados / month.quantidadeOrcamentos) * 100
+        (month.quantidadeOrcamentos || 0) > 0
+          ? ((month.quantidadeFaturados || 0) / (month.quantidadeOrcamentos || 0)) * 100
           : 0,
     }));
   };
@@ -154,7 +161,7 @@ export function AnalyticsMonthlyChart({
   // Get available years from data
   const availableYears = [
     ...new Set(monthlyDataWithConversion.map((item) => item.ano)),
-  ].sort((a, b) => b - a);
+  ].sort((a, b) => (b || 0) - (a || 0));
 
   // Default to current year if available, otherwise the latest, only once
   useEffect(() => {
@@ -163,7 +170,7 @@ export function AnalyticsMonthlyChart({
     const currentYear = new Date().getFullYear();
     const defaultYear = availableYears.includes(currentYear)
       ? currentYear
-      : availableYears[0];
+      : (availableYears[0] || new Date().getFullYear());
     setSelectedYear(defaultYear);
   }, [availableYears, selectedYear]);
 
@@ -182,7 +189,7 @@ export function AnalyticsMonthlyChart({
   const getComparisonData = () => {
     const monthMap = new Map();
     monthlyDataWithConversion.forEach((item) => {
-      const monthKey = item.mes;
+      const monthKey = item.mes || 1;
       if (!monthMap.has(monthKey)) {
         monthMap.set(monthKey, {
           mes: item.mes,
@@ -203,7 +210,7 @@ export function AnalyticsMonthlyChart({
             : viewMode === "valor"
               ? item.conversao
               : item.quantidadeFaturados;
-      monthData.years[item.ano] = {
+      monthData.years[item.ano || 2025] = {
         value,
         ano: item.ano,
       };
@@ -214,24 +221,24 @@ export function AnalyticsMonthlyChart({
       .filter((month) => Object.keys(month.years).length > 0);
   };
 
-  const filterMonthsWithData = (data: any[], metric: string) => {
+  const filterMonthsWithData = (data: MonthlyDataItem[], metric: string) => {
     return data.filter((month) => {
       if (metric === "orcamento") {
         return (
           (viewMode === "valor"
-            ? month.valorOrcamentos
-            : month.quantidadeOrcamentos) > 0
+            ? (month.valorOrcamentos || 0)
+            : (month.quantidadeOrcamentos || 0)) > 0
         );
       } else if (metric === "faturamento") {
         return (
           (viewMode === "valor"
-            ? month.valorFaturamento
-            : month.quantidadeFaturados) > 0
+            ? (month.valorFaturamento || 0)
+            : (month.quantidadeFaturados || 0)) > 0
         );
       } else if (metric === "conversao") {
         return viewMode === "valor"
-          ? month.quantidadeOrcamentos > 0 || month.quantidadeFaturados > 0
-          : month.quantidadeFaturados > 0;
+          ? (month.quantidadeOrcamentos || 0) > 0 || (month.quantidadeFaturados || 0) > 0
+          : (month.quantidadeFaturados || 0) > 0;
       }
       return false;
     });
@@ -264,10 +271,10 @@ export function AnalyticsMonthlyChart({
   const maxValue = isComparison
     ? Math.max(
         ...comparisonData.flatMap((month) =>
-          Object.values(month.years).map((year: any) => year.value),
+          Object.values(month.years as Record<string, { value: number; ano: number }>).map((year) => year.value),
         ),
       )
-    : Math.max(...chartData.map((item) => item.value));
+    : chartData.length > 0 ? Math.max(...chartData.map((item) => item.value || 0)) : 0;
 
   const getMetricLabel = () => {
     if (isComparison) {
@@ -298,7 +305,7 @@ export function AnalyticsMonthlyChart({
     }
   };
 
-  const formatMonthLabel = (monthData: any, allData: any[]) => {
+  const formatMonthLabel = (monthData: MonthlyDataItem, allData: MonthlyDataItem[]) => {
     const years = [...new Set(allData.map((item) => item.ano))];
     if (years.length > 1) {
       return `${monthData.mesNome}/${monthData.ano}`;
@@ -389,7 +396,7 @@ export function AnalyticsMonthlyChart({
             {selectedDepartamento && (
               <span className="text-sm font-normal text-gray-600 ml-2">
                 -{" "}
-                {DEPARTAMENTOS.find((d) => d.id === selectedDepartamento)?.nome}
+                {DEPARTAMENTOS.find((d: Departamento) => d.id === selectedDepartamento)?.nome}
               </span>
             )}
           </CardTitle>
@@ -400,12 +407,12 @@ export function AnalyticsMonthlyChart({
             <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
               {/* Departamento filter */}
               <div className="flex items-center space-x-2">
-                <label className="text-xs md:text-sm text-gray-600 font-medium whitespace-nowrap">
+                <label htmlFor="departamento-select" className="text-xs md:text-sm text-gray-600 font-medium whitespace-nowrap">
                   Departamento:
                 </label>
                 <Select
                   value={selectedDepartamento || "todos"}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     setSelectedDepartamento(value === "todos" ? null : value)
                   }
                 >
@@ -419,7 +426,7 @@ export function AnalyticsMonthlyChart({
                         <span>Todos</span>
                       </div>
                     </SelectItem>
-                    {DEPARTAMENTOS.map((dept) => (
+                    {DEPARTAMENTOS.map((dept: Departamento) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         <div className="flex items-center space-x-2">
                           <User className="h-4 w-4 text-blue-600" />
@@ -434,14 +441,15 @@ export function AnalyticsMonthlyChart({
               {/* Year filter */}
               {availableYears.length > 0 && (
                 <div className="flex items-center space-x-2">
-                  <label className="text-xs md:text-sm text-gray-600 font-medium whitespace-nowrap">
+                  <label htmlFor="year-select" className="text-xs md:text-sm text-gray-600 font-medium whitespace-nowrap">
                     Ano:
                   </label>
                   <select
+                    id="year-select"
                     value={selectedYear || ""}
                     onChange={(e) =>
                       setSelectedYear(
-                        e.target.value ? parseInt(e.target.value) : null,
+                        e.target.value ? parseInt(e.target.value, 10) : null,
                       )
                     }
                     className={`px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -464,6 +472,7 @@ export function AnalyticsMonthlyChart({
               {/* Valor vs Quantidade toggle */}
               <div className="relative bg-gray-200 rounded-lg p-1 flex">
                 <button
+                  type="button"
                   onClick={() => setViewMode("valor")}
                   className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                     viewMode === "valor"
@@ -474,6 +483,7 @@ export function AnalyticsMonthlyChart({
                   Valores
                 </button>
                 <button
+                  type="button"
                   onClick={() => setViewMode("quantidade")}
                   className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                     viewMode === "quantidade"
@@ -488,6 +498,7 @@ export function AnalyticsMonthlyChart({
               {/* Metric tabs */}
               <div className="relative bg-gray-200 rounded-lg p-1 flex">
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedMetric("orcamento");
                   }}
@@ -500,6 +511,7 @@ export function AnalyticsMonthlyChart({
                   Orçamento
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedMetric("faturamento");
                   }}
@@ -512,6 +524,7 @@ export function AnalyticsMonthlyChart({
                   Faturamento
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedMetric("conversao");
                   }}
@@ -529,6 +542,7 @@ export function AnalyticsMonthlyChart({
               {availableYears.length > 1 && (
                 <div className="relative bg-gray-200 rounded-lg p-1 flex">
                   <button
+                    type="button"
                     onClick={() => setIsComparison((prev) => !prev)}
                     className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
                       isComparison
@@ -578,7 +592,7 @@ export function AnalyticsMonthlyChart({
                         >
                           <div className="flex items-end space-x-3">
                             {availableYears.map((year, yearIndex) => {
-                              const yearData = month.years[year];
+                              const yearData = month.years[year as number];
                               if (!yearData) return null;
                               const height =
                                 maxValue > 0
