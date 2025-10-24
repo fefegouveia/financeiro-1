@@ -195,7 +195,7 @@ export function AnalyticsUploadSection({
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   return (
-    <div className="flex items-center space-x-4 flex-wrap gap-2">
+    <div className="flex items-center space-x-4 flex-wrap gap-2 print:hidden">
       {!isMobile && (
         <AnalyticsFilters
           uploadedData={filteredDataForFilters}
@@ -213,70 +213,33 @@ export function AnalyticsUploadSection({
       )}
 
       <div className="flex items-center space-x-2">
-        <div className="relative" ref={historyRef}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 h-10 w-10"
-                title="Mais opções"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isMobile && (
-                <DropdownMenuItem onSelect={() => setIsFiltersOpen(true)}>
-                  Filtros
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onSelect={onUploadClick}>
-                <Upload className="h-4 w-4 mr-2" /> Upload Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={onSaveData}
-                disabled={uploadedData.length === 0 || saveStatus === "saving"}
-              >
-                <Save className="h-4 w-4 mr-2" /> Salvar & Compartilhar
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onPrint}>
-                <Printer className="h-4 w-4 mr-2" /> Imprimir
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={handleHistoryClick}>
-                <History className="h-4 w-4 mr-2" /> Histórico
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onClearData} disabled={isLoading}>
-                <Trash2 className="h-4 w-4 mr-2" /> Limpar Dados
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {/* Botão Upload */}
+        <Button
+          onClick={onUploadClick}
+          className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 h-10 w-10"
+          title="Upload Excel"
+        >
+          <Upload className="h-5 w-5" />
+        </Button>
 
-          {/* História Dropdown */}
-          {historyDropdownOpen && uploadHistory.length > 0 && (
-            <div className="absolute right-0 mt-1 w-80 bg-white border border-gray-300 rounded-md shadow-lg z-20 max-h-60 overflow-auto">
-              <div className="p-3 border-b border-gray-200 bg-gray-50">
-                <h3 className="font-medium text-gray-800">
-                  Histórico de Uploads
-                </h3>
-              </div>
-              {uploadHistory.map((upload) => (
-                <div
-                  key={upload._id}
-                  className="p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
-                >
-                  <div className="font-medium text-sm text-gray-800">
-                    {upload.fileName}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {upload.uploadedBy} • {upload.totalRecords} registros
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(upload.uploadedAt || "").toLocaleString("pt-BR")}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Botão Imprimir */}
+        <Button
+          onClick={onPrint}
+          className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 h-10 w-10"
+          title="Imprimir"
+        >
+          <Printer className="h-5 w-5" />
+        </Button>
+
+        {/* Botão Excluir */}
+        <Button
+          onClick={onClearData}
+          disabled={isLoading || uploadedData.length === 0}
+          className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 h-10 w-10 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Limpar Dados"
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
 
         <input
           ref={fileInputRef}

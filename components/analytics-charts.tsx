@@ -197,7 +197,7 @@ export function AnalyticsCharts({
       <AnalyticsMonthlyChart uploadedData={originalData || uploadedData} />
 
       {/* Performance Chart - Full Width */}
-      <Card className="bg-white">
+      <Card className="bg-white border-blue-500">
         <CardHeader>
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <CardTitle className="text-lg md:text-xl text-gray-800">

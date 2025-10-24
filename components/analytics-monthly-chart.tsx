@@ -387,7 +387,7 @@ export function AnalyticsMonthlyChart({
   }, []);
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white border-blue-500">
       <CardHeader>
         <div className="flex flex-col space-y-4">
           {/* Title */}

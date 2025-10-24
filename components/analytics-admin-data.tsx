@@ -16,7 +16,7 @@ export function AnalyticsAdminData({ uploadedData }: AnalyticsAdminDataProps) {
   );
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white border-blue-500">
       <CardHeader>
         <CardTitle className="text-xl text-gray-800">
           Dados Administrativos

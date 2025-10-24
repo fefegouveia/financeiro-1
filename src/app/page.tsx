@@ -273,7 +273,7 @@ export function AnalyticsPage() {
 
       {/* Data Display */}
       {!isLoading && uploadedData && uploadedData.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-6 mt-6">
           {/* Metrics Grid */}
           <AnalyticsMetrics uploadedData={displayData} />
 

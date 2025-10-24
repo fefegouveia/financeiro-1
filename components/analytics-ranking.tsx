@@ -41,7 +41,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
   });
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white border-blue-500">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

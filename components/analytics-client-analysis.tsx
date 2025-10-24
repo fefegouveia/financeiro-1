@@ -195,7 +195,7 @@ export function AnalyticsClientAnalysis({
   // Se não há dados de cliente disponíveis, mostrar aviso
   if (!hasClientData) {
     return (
-      <Card className="bg-white">
+      <Card className="bg-white border-blue-500">
         <CardHeader>
           <CardTitle className="text-xl text-gray-800">
             Análise de Clientes
@@ -284,7 +284,7 @@ export function AnalyticsClientAnalysis({
   };
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white border-blue-500">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -331,7 +331,7 @@ export function AnalyticsClientAnalysis({
                   Clientes por Faturamento
                 </h3>
               </div>
-              <div className="border rounded-lg bg-gray-50">
+              <div className="border border-blue-500 rounded-lg bg-gray-50">
                 <div style={{ height: 380, width: "100%" }}>
                   <List
                     height={380}
@@ -354,7 +354,7 @@ export function AnalyticsClientAnalysis({
                   Não Aprovados por Cliente
                 </h3>
               </div>
-              <div className="border rounded-lg bg-gray-50">
+              <div className="border border-blue-500 rounded-lg bg-gray-50">
                 <div style={{ height: 380, width: "100%" }}>
                   <List
                     height={380}
