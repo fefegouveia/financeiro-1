@@ -127,3 +127,34 @@ body {
 .recharts-legend-wrapper {
   font-size: 8px !important;
 }
+
+/* Estilos de impressão */
+@media print {
+  /* Evitar quebra de página dentro dos cards */
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Aplicar em todos os cards */
+  [class*="Card"],
+  [class*="card"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Esconder dropdowns abertos na impressão */
+  .absolute.z-10 {
+    display: none !important;
+  }
+
+  /* Garantir que os cards mantenham suas bordas */
+  body {
+    background: white;
+  }
+
+  /* Ajustar margens para impressão */
+  @page {
+    margin: 1cm;
+  }
+}

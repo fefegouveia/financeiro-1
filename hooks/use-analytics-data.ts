@@ -31,17 +31,15 @@ interface DataRow {
 }
 
 export function useAnalyticsData() {
-  // Convex hooks
-  const savedData = useLoadAnalyticsData();
-  const uploadHistoryData = useUploadHistory();
-  const saveAnalyticsMutation = useSaveAnalyticsData();
-  const clearDataMutation = useClearAnalyticsData();
-
-  // Batch processing hooks
-  const initializeUpload = useInitializeAnalyticsUpload();
-  const saveDataBatch = useSaveAnalyticsDataBatch();
-  const saveRawDataBatch = useSaveAnalyticsRawDataBatch();
-  const finalizeUpload = useFinalizeAnalyticsUpload();
+  // Convex hooks - DESABILITADOS (não usando banco de dados)
+  // const savedData = useLoadAnalyticsData();
+  // const uploadHistoryData = useUploadHistory();
+  // const saveAnalyticsMutation = useSaveAnalyticsData();
+  // const clearDataMutation = useClearAnalyticsData();
+  // const initializeUpload = useInitializeAnalyticsUpload();
+  // const saveDataBatch = useSaveAnalyticsDataBatch();
+  // const saveRawDataBatch = useSaveAnalyticsRawDataBatch();
+  // const finalizeUpload = useFinalizeAnalyticsUpload();
 
   const [uploadedData, setUploadedData] = useState<DataRow[]>([]);
   const [rawData, setRawData] = useState<RawDataRow[]>([]);
@@ -63,107 +61,138 @@ export function useAnalyticsData() {
     engineerBreakdown: any[];
   } | null>(null);
 
-  // Auto-sync when Convex query returns/changes
+  // Carregar dados do localStorage ao inicializar
   useEffect(() => {
-    if (!savedData) {
-      setUploadedData([]);
-      setRawData([]);
-      return;
-    }
-    const { data: loadedData, rawData: savedRawData } = savedData as {
-      data?: any[];
-      rawData?: RawDataRow[];
-    };
-    if (Array.isArray(loadedData) && loadedData.length > 0) {
-      const convertedData: DataRow[] = loadedData.map((item: any) => ({
-        engenheiro: item.engenheiro,
-        ano: item.ano,
-        mes: item.mes,
-        registros: item.registros,
-        servicos: item.servicos,
-        pecas: item.pecas,
-        valorTotal: item.valorTotal,
-        valorPecas: item.valorPecas,
-        valorServicos: item.valorServicos,
-        valorOrcamentos: item.valorOrcamentos,
-        projetos: item.projetos,
-        quantidade: item.quantidade,
-        cliente: item.cliente,
-      }));
-      setUploadedData(convertedData);
-      setRawData(savedRawData || []);
-    } else {
-      setUploadedData([]);
-      setRawData([]);
-    }
-  }, [savedData]);
-
-  useEffect(() => {
-    if (uploadHistoryData) {
-      setUploadHistory(uploadHistoryData);
-    }
-  }, [uploadHistoryData]);
-
-  // Função para carregar dados salvos
-  const loadSavedData = useCallback(async () => {
-    setIsLoading(true);
     try {
-      console.log("Loading saved data...", savedData);
-      if (savedData) {
-        const { data: loadedData, rawData: savedRawData } = savedData as {
-          data?: any[];
-          rawData?: RawDataRow[];
-        };
-        console.log(
-          `Loaded ${Array.isArray(loadedData) ? loadedData.length : 0} analytics items and ${Array.isArray(savedRawData) ? savedRawData.length : 0} raw data items`,
-        );
-        if (Array.isArray(loadedData) && loadedData.length > 0) {
-          const convertedData: DataRow[] = loadedData.map((item: any) => ({
-            engenheiro: item.engenheiro,
-            ano: item.ano,
-            mes: item.mes,
-            registros: item.registros,
-            servicos: item.servicos,
-            pecas: item.pecas,
-            valorTotal: item.valorTotal,
-            valorPecas: item.valorPecas,
-            valorServicos: item.valorServicos,
-            valorOrcamentos: item.valorOrcamentos,
-            projetos: item.projetos,
-            quantidade: item.quantidade,
-            cliente: item.cliente,
-          }));
-          console.log("Setting uploaded data:", convertedData.length, "items");
-          setUploadedData(convertedData);
-          // Now we load raw data from the database too
-          console.log("Setting raw data:", savedRawData?.length || 0, "items");
-          setRawData(savedRawData || []);
-        } else {
-          console.log("No data loaded from database");
-          setUploadedData([]);
-          setRawData([]);
+      const storedData = localStorage.getItem('analytics-uploaded-data');
+      const storedRawData = sessionStorage.getItem('analytics-raw-data'); // Use sessionStorage para dados grandes
+      const storedFileName = localStorage.getItem('analytics-file-name');
+
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        if (parsedData && parsedData.length > 0) {
+          setUploadedData(parsedData);
+          console.log('Dados carregados do localStorage:', parsedData.length, 'items');
         }
-      } else {
-        console.log("No saved data found");
-        setUploadedData([]);
-        setRawData([]);
+      }
+
+      if (storedRawData) {
+        const parsedRawData = JSON.parse(storedRawData);
+        if (parsedRawData && parsedRawData.length > 0) {
+          setRawData(parsedRawData);
+          console.log('Dados brutos carregados do sessionStorage:', parsedRawData.length, 'items');
+        }
+      }
+
+      if (storedFileName) {
+        setFileName(storedFileName);
       }
     } catch (error) {
-      console.error("Error loading data:", error);
-      setUploadedData([]);
-      setRawData([]);
-    } finally {
-      setIsLoading(false);
+      console.error('Erro ao carregar dados do storage:', error);
     }
-  }, [savedData]);
+  }, []);
+
+  // Salvar dados no localStorage sempre que mudarem
+  useEffect(() => {
+    try {
+      if (uploadedData && uploadedData.length > 0) {
+        const dataStr = JSON.stringify(uploadedData);
+        // Verifica tamanho (~5MB limit)
+        if (dataStr.length < 5000000) {
+          localStorage.setItem('analytics-uploaded-data', dataStr);
+          console.log('Dados salvos no localStorage:', uploadedData.length, 'items');
+        } else {
+          console.warn('Dados muito grandes para localStorage, salvando apenas no Convex');
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        console.warn('LocalStorage cheio, limpando dados antigos...');
+        localStorage.removeItem('analytics-uploaded-data');
+      } else {
+        console.error('Erro ao salvar dados no localStorage:', error);
+      }
+    }
+  }, [uploadedData]);
+
+  useEffect(() => {
+    try {
+      if (rawData && rawData.length > 0) {
+        const dataStr = JSON.stringify(rawData);
+        // Use sessionStorage para dados brutos (limpa ao fechar aba)
+        if (dataStr.length < 10000000) { // sessionStorage geralmente tem limite maior
+          sessionStorage.setItem('analytics-raw-data', dataStr);
+          console.log('Dados brutos salvos no sessionStorage:', rawData.length, 'items');
+        } else {
+          console.warn('Dados brutos muito grandes, não serão mantidos após reload');
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        console.warn('SessionStorage cheio, dados não serão persistidos na sessão');
+      } else {
+        console.error('Erro ao salvar dados brutos no sessionStorage:', error);
+      }
+    }
+  }, [rawData]);
+
+  useEffect(() => {
+    try {
+      if (fileName) {
+        localStorage.setItem('analytics-file-name', fileName);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar nome do arquivo no localStorage:', error);
+    }
+  }, [fileName]);
+
+  // Auto-sync when Convex query returns/changes - DESABILITADO
+  // useEffect(() => {
+  //   if (!savedData) {
+  //     return;
+  //   }
+  //   const { data: loadedData, rawData: savedRawData } = savedData as {
+  //     data?: any[];
+  //     rawData?: RawDataRow[];
+  //   };
+  //   if (Array.isArray(loadedData) && loadedData.length > 0) {
+  //     const convertedData: DataRow[] = loadedData.map((item: any) => ({
+  //       engenheiro: item.engenheiro,
+  //       ano: item.ano,
+  //       mes: item.mes,
+  //       registros: item.registros,
+  //       servicos: item.servicos,
+  //       pecas: item.pecas,
+  //       valorTotal: item.valorTotal,
+  //       valorPecas: item.valorPecas,
+  //       valorServicos: item.valorServicos,
+  //       valorOrcamentos: item.valorOrcamentos,
+  //       projetos: item.projetos,
+  //       quantidade: item.quantidade,
+  //       cliente: item.cliente,
+  //     }));
+  //     setUploadedData(convertedData);
+  //     setRawData(savedRawData || []);
+  //   }
+  // }, [savedData]);
+
+  // useEffect(() => {
+  //   if (uploadHistoryData) {
+  //     setUploadHistory(uploadHistoryData);
+  //   }
+  // }, [uploadHistoryData]);
+
+  // Função para carregar dados salvos - SIMPLIFICADA (apenas localStorage)
+  const loadSavedData = useCallback(async () => {
+    // Os dados já são carregados automaticamente pelo useEffect no início
+    // Esta função não precisa fazer nada pois não usamos banco de dados
+    console.log("Dados carregados do localStorage automaticamente");
+  }, []);
 
   const loadUploadHistory = useCallback(async () => {
-    try {
-      if (uploadHistoryData) {
-        setUploadHistory(uploadHistoryData);
-      }
-    } catch (error) {}
-  }, [uploadHistoryData]);
+    // Não usa banco de dados, então não há histórico para carregar
+    console.log("Histórico de uploads não disponível (sem banco de dados)");
+  }, []);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -691,6 +720,11 @@ export function useAnalyticsData() {
   }, []);
 
   const handleSaveData = useCallback(async () => {
+    // Função desabilitada - não usa banco de dados
+    alert("Função 'Salvar & Compartilhar' não disponível.\n\nOs dados ficam salvos apenas no seu navegador (localStorage).");
+    return;
+
+    /* CÓDIGO ORIGINAL COMENTADO - REQUER BANCO DE DADOS CONVEX
     if (uploadedData.length === 0) {
       alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.");
       return;
@@ -850,7 +884,8 @@ export function useAnalyticsData() {
       setTimeout(() => setSaveStatus("idle"), 3000);
       alert("Erro ao salvar dados. Tente novamente.");
     }
-  }, [uploadedData, rawData, fileName, saveAnalyticsMutation, clearDataMutation, initializeUpload, saveDataBatch, saveRawDataBatch, finalizeUpload, loadUploadHistory]);
+    */
+  }, [uploadedData]);
 
   const handleClearData = useCallback(async () => {
     if (
@@ -860,11 +895,18 @@ export function useAnalyticsData() {
     ) {
       setIsLoading(true);
       try {
-        await clearDataMutation();
+        // Limpar estados
         setUploadedData([]);
         setRawData([]);
         setFileName("");
         setUploadHistory([]);
+
+        // Limpar localStorage e sessionStorage
+        localStorage.removeItem('analytics-uploaded-data');
+        localStorage.removeItem('analytics-file-name');
+        sessionStorage.removeItem('analytics-raw-data');
+        console.log('Dados removidos do localStorage e sessionStorage');
+
         alert("Dados limpos com sucesso!");
       } catch (error) {
         alert("Erro ao limpar dados.");
@@ -872,7 +914,7 @@ export function useAnalyticsData() {
         setIsLoading(false);
       }
     }
-  }, [clearDataMutation]);
+  }, []);
 
   const generateDetailedReport = useCallback(() => {
     if (!processingSummary || uploadedData.length === 0) {

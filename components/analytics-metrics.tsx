@@ -54,7 +54,7 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
         </div>
       ) : (
         <>
-          <Card className="bg-white">
+          <Card className="bg-white border-blue-500">
             <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
                 <div className="flex items-center space-x-3 mb-3">
@@ -70,7 +70,7 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-white">
+          <Card className="bg-white border-blue-500">
             <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
                 <div className="flex items-center space-x-3 mb-3">
@@ -86,7 +86,7 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-white">
+          <Card className="bg-white border-blue-500">
             <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
                 <div className="flex items-center space-x-3 mb-3">
@@ -102,7 +102,7 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-white">
+          <Card className="bg-white border-blue-500">
             <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
                 <div className="flex items-center space-x-3 mb-3">
@@ -121,7 +121,7 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-white">
+          <Card className="bg-white border-blue-500">
             <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
                 <div className="flex items-center space-x-3 mb-3">
